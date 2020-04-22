@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Evo Event Calendar Example</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="evo-calendar.css">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+</head>
+<style>
+    main {
+        padding: 20px;
+        max-width: 1366px;
+        width: 100%;
+        margin: 150px auto;
+    }
+    h1 {
+        color: #755eb5;
+    }
+    h1 span {
+        color: #616161;
+    }
+    hr {
+        margin-bottom: 20px;
+    }
+    @media only screen and (max-width: 425px) {
+        main {
+            padding: 10px;
+        }
+    }
+</style>
+<body><div id="jquery-script-menu">
+<div class="jquery-script-center">
+<ul>
+<li><a href="https://www.jqueryscript.net/time-clock/event-calendar-evo.html">Download This Plugin</a></li>
+<li><a href="https://www.jqueryscript.net/">Back To jQueryScript.Net</a></li>
+</ul><div id="carbon-block"></div>
+<div class="jquery-script-ads"><script type="text/javascript"><!--
+google_ad_client = "ca-pub-2783044520727903";
+/* jQuery_demo */
+google_ad_slot = "2780937993";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="https://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script></div>
+<div class="jquery-script-clear"></div>
+</div>
+</div>
+    <main>
+        <h1>Evo <span>j Event Calendar Example</span></h1>
+        <hr/>
+        <div id="evoCalendar"></div>
+    </main>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh" crossorigin="anonymous"></script>
+    <script src="evo-calendar.js"></script>
+    <script>
+        $('#evoCalendar').evoCalendar({
+            todayHighlight: true,
+            sidebarToggler: true,
+            eventListToggler: true,
+            canAddEvent: false,
+            calendarEvents: [
+                { name: "New Year", date: "Wed Jan 01 2020 00:00:00 GMT-0800 (Pacific Standard Time)", type: "holiday", everyYear: true },
+                { name: "Valentine's Day", date: "Fri Feb 14 2020 00:00:00 GMT-0800 (Pacific Standard Time)", type: "holiday", everyYear: true },
+                { name: "Patient #1", date: "February/3/2020", type: "event" },
+                { name: "Patient #3", date: "February/3/2020", type: "event" },
+                { name: "Patient #4", date: "February/3/2020", type: "event" },
+                { name: "Holiday #3", date: "February/3/2020", type: "holiday" },
+                { name: "Birthday #2", date: "February/3/2020", type: "birthday" },
+                { name: "Author's Birthday", date: "February/15/2020", type: "birthday", everyYear: true },
+                { name: "Holiday #4", date: "February/15/2020", type: "event" },
+                { name: "Patient #2", date: "February/8/2020", type: "event" },
+                { name: "Leap day", date: "February/29/2020", type: "holiday", everyYear: true }
+            ],
+            onSelectDate: function() {
+                // console.log('onSelectDate!')
+            },
+            onAddEvent: function() {
+                console.log('onAddEvent!')
+            }
+        });
+        // $("#evoCalendar").evoCalendar('addCalendarEvent', [...]);
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-36251023-1']);
+  _gaq.push(['_setDomainName', 'jqueryscript.net']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+<script>
+try {
+  fetch(new Request("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", { method: 'HEAD', mode: 'no-cors' })).then(function(response) {
+    return true;
+  }).catch(function(e) {
+    var carbonScript = document.createElement("script");
+    carbonScript.src = "//cdn.carbonads.com/carbon.js?serve=CK7DKKQU&placement=wwwjqueryscriptnet";
+    carbonScript.id = "_carbonads_js";
+    document.getElementById("carbon-block").appendChild(carbonScript);
+  });
+} catch (error) {
+  console.log(error);
+}
+</script>
+</body>
+</html>
