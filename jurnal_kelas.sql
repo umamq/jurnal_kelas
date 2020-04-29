@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 27 Apr 2020 pada 12.05
+-- Waktu pembuatan: 29 Apr 2020 pada 08.14
 -- Versi server: 10.1.34-MariaDB
 -- Versi PHP: 5.6.37
 
@@ -40,8 +40,34 @@ CREATE TABLE `ci_session` (
 --
 
 INSERT INTO `ci_session` (`id`, `ip_address`, `timestamp`, `data`) VALUES
-('9t29te9bv4rmul3l24v2ffkohcdlvb9d', '::1', 1587981773, 0x5f5f63695f6c6173745f726567656e65726174657c693a313538373938313437363b757365725f69647c733a313a2231223b757365725f757365726e616d657c733a353a2261646d696e223b757365725f6c6576656c7c733a353a2241444d494e223b),
-('lg4483hl9g8gapa6nsa93l7rt6o7l23b', '::1', 1587981791, 0x5f5f63695f6c6173745f726567656e65726174657c693a313538373938313739303b757365725f69647c733a313a2231223b757365725f757365726e616d657c733a353a2261646d696e223b757365725f6c6576656c7c733a353a2241444d494e223b);
+('6dpglbtclk7dh3f28qd9lj19gqo5gmkg', '::1', 1588140772, 0x5f5f63695f6c6173745f726567656e65726174657c693a313538383134303737323b757365725f69647c733a313a2231223b757365725f757365726e616d657c733a353a2261646d696e223b757365725f6c6576656c7c733a353a2241444d494e223b),
+('ecdtsdn4f3de1ncggu8j7hv6k2ev5i4s', '::1', 1588140751, 0x5f5f63695f6c6173745f726567656e65726174657c693a313538383134303435313b757365725f69647c733a313a2231223b757365725f757365726e616d657c733a353a2261646d696e223b757365725f6c6576656c7c733a353a2241444d494e223b);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `matapelajaran`
+--
+
+CREATE TABLE `matapelajaran` (
+  `id` int(11) NOT NULL,
+  `nama` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data untuk tabel `matapelajaran`
+--
+
+INSERT INTO `matapelajaran` (`id`, `nama`) VALUES
+(1, 'Bahasa Indonesia'),
+(2, 'Matematika'),
+(3, 'Sejarah'),
+(4, 'Bahasa Inggris'),
+(5, 'PKN'),
+(6, 'Agama'),
+(7, 'Ekonomi'),
+(8, 'Seni Budaya'),
+(9, 'Olahraga');
 
 -- --------------------------------------------------------
 
@@ -118,6 +144,12 @@ ALTER TABLE `ci_session`
   ADD KEY `ci_sessions_timestamp` (`timestamp`);
 
 --
+-- Indeks untuk tabel `matapelajaran`
+--
+ALTER TABLE `matapelajaran`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indeks untuk tabel `pegawai`
 --
 ALTER TABLE `pegawai`
@@ -134,6 +166,12 @@ ALTER TABLE `user`
 --
 -- AUTO_INCREMENT untuk tabel yang dibuang
 --
+
+--
+-- AUTO_INCREMENT untuk tabel `matapelajaran`
+--
+ALTER TABLE `matapelajaran`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT untuk tabel `pegawai`

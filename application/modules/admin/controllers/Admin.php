@@ -162,6 +162,52 @@ class Admin extends MX_Controller
         redirect(site_url('admin/kelola-pegawai'), 'reload');
     }
 
+    public function kelola_matapelajaran()
+    {
+        try {
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('matapelajaran');
+            $crud->set_subject('Mata Pelajaran');
+
+            $crud->required_fields('nama');
+
+            $crud->columns('nama');
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+            });
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Mata Pelajaran', $this->base_breadcrumbs . '/kelola-matapelajaran');
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+            } elseif ($state === 'update_validation') {
+            } elseif ($state === 'add') {
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
+            } elseif ($state === 'edit') {
+
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
+            }
+
+            $crud->unset_clone();
+            $crud->unset_read();
+
+            $extra  = array('page_title' => 'Kelola Mata Pelajaran');
+            $output = $crud->render();
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
+    }
+
     public function profile()
     {
         try {

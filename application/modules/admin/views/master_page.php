@@ -232,7 +232,7 @@
                      </a>
                   </li>
                   <li class="nav-item">
-                     <a href="<?php echo site_url('admin/index') ?>" class="nav-link">
+                     <a href="<?php echo site_url('admin/kelola-matapelajaran') ?>" class="nav-link">
                         <i class="nav-icon fas fa-book-open"></i>
                         <p>Mata Pelajaran</p>
                      </a>
