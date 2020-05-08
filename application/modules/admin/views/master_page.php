@@ -220,13 +220,13 @@
                   </li>
 
                   <li class="nav-item">
-                     <a href="<?php echo site_url('admin/index') ?>" class="nav-link">
+                     <a href="<?php echo site_url('admin/kelola_siswa') ?>" class="nav-link">
                         <i class="nav-icon fas fa-users"></i>
                         <p>Siswa</p>
                      </a>
                   </li>
                   <li class="nav-item">
-                     <a href="<?php echo site_url('admin/index') ?>" class="nav-link">
+                     <a href="<?php echo site_url('admin/kelola_kelas') ?>" class="nav-link">
                         <i class="nav-icon fas fa-building"></i>
                         <p>Kelas</p>
                      </a>
