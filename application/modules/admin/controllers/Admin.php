@@ -48,7 +48,7 @@ class Admin extends MX_Controller
         $this->_page_output($data);
     }
 
-    public function jurnal_kelas()
+    public function jurnal_kelas($status_ajax = null)
     {
         $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
 
@@ -57,39 +57,465 @@ class Admin extends MX_Controller
         $this->_page_output($data);
     }
 
-    public function kelola_pegawai()
+    public function kelola_jadwalpelajaran($kelas_id = null)
+    {
+
+        if ($kelas_id != null) {
+            try {
+
+                $cek = $this->db->get_where('kelas', array('id' => $kelas_id));
+                if ($cek->num_rows() == 0) {
+                    redirect(site_url('admin/kelola-jadwalpelajaran'), 'reload');
+                }
+
+                $this->load->library(array('grocery_CRUD'));
+                $crud = new Grocery_CRUD();
+
+                $crud->set_table('jadwal_mengajar');
+                $crud->set_subject('Jadwal Mengajar');
+                $crud->where('kelas_id', $kelas_id);
+                $crud->order_by('id', 'ASC');
+
+                $crud->required_fields('hari', 'jam', 'matapelajaran_id', 'pegawai_id');
+
+                $crud->columns('hari', 'jam', 'matapelajaran_id', 'pegawai_id');
+                $crud->field_type('kelas_id', 'hidden', $kelas_id);
+
+                $crud->callback_after_insert(function ($post_array, $primary_key) {
+                });
+
+                $crud->callback_after_update(function ($post_array, $primary_key) {
+                });
+
+                $crud->set_relation('pegawai_id', 'pegawai', 'nama_lengkap');
+                $crud->display_as('pegawai_id', 'Nama Pengampu');
+
+                $crud->set_relation('matapelajaran_id', 'matapelajaran', 'nama');
+                $crud->display_as('matapelajaran_id', 'Mata Pelajaran');
+
+                $crud->field_type('tgl_update', 'hidden');
+
+                $pelajaran = $cek->row_array();
+
+                $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+                $this->breadcrumbs->push('Jadwal Pelajaran', $this->base_breadcrumbs . '/kelola-jadwalpelajaran');
+                $this->breadcrumbs->push($pelajaran['nama_kelas'], $this->base_breadcrumbs . '/kelola_jadwalpelajaran/' . $kelas_id);
+
+                $state = $crud->getState();
+                if ($state === 'insert_validation') {
+                } elseif ($state === 'update_validation') {
+                } elseif ($state === 'add') {
+                    $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/jadwal-mengajar/add');
+                } elseif ($state === 'edit') {
+
+                    $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/jadwal-mengajar/add');
+                }
+
+                $crud->unset_clone();
+                $crud->unset_read();
+
+                $extra  = array('page_title' => 'Kelola jadwal pelajaran <span class="text-danger">' . strtoupper($pelajaran['nama_kelas']) . '</span>');
+                $output = $crud->render();
+
+                $output = array_merge((array) $output, $extra);
+
+                $this->_page_output($output);
+            } catch (Exception $e) {
+                show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+            }
+        } else {
+
+            $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Kelola Jadwal Pelajaran', $this->base_breadcrumbs . '/kelola-jadwalpelajaran');
+
+            $kelas = $this->db->query("SELECT a.id AS kelas_id,
+                                              a.nama_kelas AS nama_kelas,
+                                              b.nama AS nama_jurusan,
+                                              CONCAT(COUNT(c.id),'&nbsp;','Siswa') AS jumlah_siswa
+                                       FROM kelas a
+                                       LEFT JOIN jurusan b ON a.jurusan_id = b.id
+                                       LEFT JOIN siswa c ON a.id = c.kelas_id
+                                       GROUP BY a.id");
+            $data['keterangan'] = 'Pilih kelas yang akan dikelola jadwal pelajarannya';
+            $data['kelas']      = $kelas;
+            $data['page_name']  = 'list_kelas';
+            $data['page_title'] = 'Kelola Jadwal Pelajaran';
+            $this->_page_output($data);
+        }
+    }
+
+    public function hapus_siswa_kelas($siswa_id, $kelas_id)
+    {
+
+        $siswa_id = simple_crypt($siswa_id, 'd');
+        $kelas_id = simple_crypt($kelas_id, 'd');
+
+        $cek = $this->db->get_where('siswa', array('id' => $siswa_id));
+        if ($cek->num_rows() > 0) {
+            $this->db->where('id', $siswa_id);
+            $this->db->update('siswa', array('kelas_id' => 0));
+        }
+
+        redirect(site_url('admin/kelola-siswa-kelas/' . $kelas_id));
+    }
+
+    public function kelola_siswa_kelas($kelas_id = null)
+    {
+
+        if (!empty($_POST)) {
+            $kelas_id = $this->input->post('kelas_id');
+            $siswa    = $this->input->post('siswa');
+
+            foreach ($siswa as $value) {
+                $this->db->where('id', $value);
+                $this->db->update('siswa', array('kelas_id' => $kelas_id));
+            }
+        }
+
+        $data = array();
+        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+        $this->breadcrumbs->push('Kelas', $this->base_breadcrumbs . '/kelola-kelas');
+
+        $this->breadcrumbs->push('Data Siswa Kelas', $this->base_breadcrumbs . '/kelola-siswa-kelas/' . $kelas_id);
+
+        $data['kelas_id'] = $kelas_id;
+
+        $cek = $this->db->get_where('kelas', array('id' => $kelas_id));
+
+        if ($cek->num_rows() > 0) {
+            $db_kelas           = $cek->row_array();
+            $data['page_title'] = 'Siswa Kelas ' . $db_kelas['nama_kelas'];
+        } else {
+            redirect(site_url('admin'), 'reload');
+        }
+
+        $this->db->order_by('nama_lengkap', 'ASC');
+        $data['list_siswa'] = $this->db->get_where('siswa', array('kelas_id' => $kelas_id));
+        $data['page_name']  = 'list_siswa';
+
+        $this->_page_output($data);
+    }
+
+    public function kelola_kelas()
     {
         try {
             $this->load->library(array('grocery_CRUD'));
             $crud = new Grocery_CRUD();
 
-            $crud->set_table('tes');
-            $crud->set_subject('tes');
-            $crud->order_by('name', 'ASC');
+            $crud->set_table('kelas');
+            $crud->set_subject('Kelas');
+            $crud->order_by('nama_kelas', 'ASC');
 
-            $crud->required_fields('name');
+            $crud->required_fields('jurusan_id', 'nama_kelas');
 
-            $crud->columns('name', 'jk', 'password');
-            $crud->field_type('password', 'hidden');
+            $crud->columns('nama_kelas', 'siswa');
+            $crud->field_type('tgl_update', 'hidden');
+
+            $crud->set_relation('jurusan_id', 'jurusan', 'nama');
+
+            $crud->display_as('jurusan_id', 'Jurusan');
 
             $crud->callback_after_insert(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_column('siswa', function ($value, $row) {
+
+                return '<a href="' . site_url('admin/kelola-siswa-kelas/' . $row->id) . '">Kelola</a>';
+            });
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Kelas', $this->base_breadcrumbs . '/kelola-kelas');
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+            } elseif ($state === 'update_validation') {
+            } elseif ($state === 'add') {
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-kelas/add');
+            } elseif ($state === 'edit') {
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-kelas/add');
+            }
+
+            $crud->unset_clone();
+            $crud->unset_read();
+
+            $extra  = array('page_title' => 'Kelola Kelas');
+            $output = $crud->render();
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
+    }
+
+    public function kelola_matapelajaran()
+    {
+        try {
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('matapelajaran');
+            $crud->set_subject('Mata Pelajaran');
+
+            $crud->required_fields('nama');
+
+            $crud->columns('nama');
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+            });
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Mata Pelajaran', $this->base_breadcrumbs . '/kelola-matapelajaran');
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+            } elseif ($state === 'update_validation') {
+            } elseif ($state === 'add') {
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
+            } elseif ($state === 'edit') {
+
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
+            }
+
+            $crud->unset_clone();
+            $crud->unset_read();
+
+            $extra  = array('page_title' => 'Kelola Mata Pelajaran');
+            $output = $crud->render();
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
+    }
+
+    public function reset_password_siswa($siswa_id)
+    {
+
+        $cek = $this->db->get_where('siswa', array('id' => $siswa_id))->row_array();
+
+        $nisn_pass = md5($cek['nisn']);
+
+        $this->db->set('password', "'" . $nisn_pass . "'", false);
+        $this->db->where('id', $siswa_id);
+        $this->db->update('siswa');
+
+        $this->alert->set('alert-success', 'Password berhasil direset dan diganti menjadi NISN');
+
+        redirect(site_url('admin/kelola-siswa'), 'reload');
+    }
+
+    public function profile()
+    {
+
+        try {
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('user');
+            $crud->set_subject('Profile');
+
+            $crud->required_fields('nama_lengkap');
+            $crud->columns('username', 'nama_lengkap', 'email', 'telp');
+            $crud->field_type('tgl_update', 'hidden');
+            $crud->field_type('password', 'hidden');
+            $crud->field_type('terakhir_login', 'readonly');
+            $crud->field_type('username', 'readonly');
+            $crud->field_type('level', 'readonly');
+
+            $crud->field_type('token_firebase', 'hidden');
+
+            $crud->field_type('token_login', 'hidden');
+
+            $crud->set_field_upload('foto', 'uploads/foto');
+
+            // $crud->display_as('provinsi_id', 'Wilayah Kerja');
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
 
                 $this->db->where('id', $primary_key);
                 $this->db->update(
-                    'tes',
+                    'user',
                     array(
-                        'password'   => md5($post_array['qwerty']),
+                        'tgl_update' => date('Y-m-d H:i:s'),
                     )
                 );
             });
 
-            $crud->callback_column('password', function ($value, $row) {
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            // $this->breadcrumbs->push('Profil', $this->base_breadcrumbs . '/profile');
 
-                return '<a onclick="return confirm(\'anda yakin melakukan reset password untuk pegawai ini?\');" class="text-danger" href="' . site_url('admin/reset-password-pegawai/' . $row->id) . '">RESET</a>';
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+                // $crud->set_rules('npsn', 'NPSN', 'is_unique[sekolah.npsn]|required');
+                // $crud->set_rules('email', 'Email', 'is_unique[sekolah.email]|valid_email');
+            } elseif ($state === 'update_validation') {
+                $crud->set_rules('email', 'Email', 'valid_email');
+            } elseif ($state === 'add') {
+                // $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-sekolah/add');
+            } elseif ($state === 'edit') {
+
+                $curr_user_id = $this->uri->segment(4);
+
+                if ($curr_user_id != $this->user_id) {
+                    redirect(site_url('admin/profile/edit/' . $this->user_id), 'reload');
+                }
+
+                $this->breadcrumbs->push('Ubah Profil', $this->base_breadcrumbs . '/profile/edit');
+            }
+
+            $crud->unset_back_to_list();
+            $extra = array('page_title' => 'Edit Profile');
+
+            $output = $crud->render();
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
+    }
+
+    public function kelola_jam_aktif()
+    {
+        try {
+
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('jam_aktif');
+            $crud->set_subject('Jam aktif');
+
+            $crud->required_fields('mulai', 'selesai');
+            $crud->columns('jam_ke', 'mulai', 'selesai');
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
             });
 
-            $extra               = array('page_title' => 'Kelola Pegawai');
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+            });
 
+            $crud->field_type('tgl_update', 'hidden');
+            $crud->field_type('jam_ke', 'readonly');
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Jam Aktif', $this->base_breadcrumbs . '/kelola-jam-aktif');
+
+            $crud->unset_add();
+            $crud->unset_clone();
+            $crud->unset_read();
+            $crud->unset_delete();
+
+            $extra  = array('page_title' => 'Kelola Jam Aktif');
+            $output = $crud->render();
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+            } elseif ($state === 'update_validation') {
+            } elseif ($state === 'add') {
+                $extra['keterangan'] = 'Format jam mulai dan jam selesai => jam:menit (misal jam 8 pagi => 08:00) ';
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-jam-aktif/add');
+            } elseif ($state === 'edit') {
+                $extra['keterangan'] = 'Format => jam:menit (misal jam 8 pagi => 08:00) ';
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-jam-aktif/add');
+            }
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
+    }
+
+    public function jadwal_mengajar($pegawai_id)
+    {
+        try {
+
+            $cek = $this->db->get_where('pegawai', array('id' => $pegawai_id));
+            if ($cek->num_rows() == 0) {
+                redirect(site_url('admin/kelola-pegawai'), 'reload');
+            }
+
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('jadwal_mengajar');
+            $crud->set_subject('Jadwal Mengajar');
+            $crud->where('pegawai_id', $pegawai_id);
+
+            $crud->required_fields('hari', 'jam_mulai', 'jam_selesai', 'matapelajaran_id', 'kelas_id');
+
+            $crud->field_type('pegawai_id', 'hidden', $pegawai_id);
+
+            $crud->columns('hari', 'jam', 'kelas_id', 'matapelajaran_id');
+
+            $crud->callback_column('jam', function ($value, $row) {
+
+                return 'Jam ke-' . $row->jam_mulai . '&nbsp;s/d&nbsp;' . $row->jam_selesai;
+            });
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+            });
+
+            //tags
+            $this->db->order_by('jam_ke ASC');
+            $jam_aktif = $this->db->get('jam_aktif');
+
+            $set_jam = array();
+            foreach ($jam_aktif->result_array() as $row) {
+                $set_jam[$row['id']] = 'Jam ke - ' . $row['jam_ke'] . '&nbsp;(' . $row['mulai'] . ' s/d ' . $row['selesai'] . ')';
+            }
+
+            $crud->field_type('jam_mulai', 'dropdown', $set_jam);
+            $crud->field_type('jam_selesai', 'dropdown', $set_jam);
+            $crud->display_as('jam_mulai', 'Mulai mengajar');
+            $crud->display_as('jam_selesai', 'Sampai dengan');
+
+            $crud->set_relation('kelas_id', 'kelas', 'nama_kelas');
+            $crud->display_as('kelas_id', 'Kelas');
+
+            $crud->set_relation('matapelajaran_id', 'matapelajaran', 'nama');
+            $crud->display_as('matapelajaran_id', 'Mata Pelajaran');
+
+            $crud->field_type('tgl_update', 'hidden');
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Kelola Pegawai', $this->base_breadcrumbs . '/kelola_pegawai');
+            $this->breadcrumbs->push('Jadwal Mengajar', $this->base_breadcrumbs . '/jadwal-mengajar');
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+            } elseif ($state === 'update_validation') {
+            } elseif ($state === 'add') {
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/jadwal-mengajar/add');
+            } elseif ($state === 'edit') {
+
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/jadwal-mengajar/add');
+            }
+
+            $crud->unset_clone();
+            $crud->unset_read();
+
+            $pegawai = $cek->row_array();
+
+            $extra  = array('page_title' => 'Kelola jadwal mengajar untuk<br/><span class="text-info">' . $pegawai['nama_lengkap'] . ' (' . $pegawai['nuptk'] . ')</span>');
             $output = $crud->render();
 
             $output = array_merge((array) $output, $extra);
@@ -114,6 +540,95 @@ class Admin extends MX_Controller
         $this->alert->set('alert-success', 'Password berhasil direset dan diganti menjadi NUPTK');
 
         redirect(site_url('admin/kelola-pegawai'), 'reload');
+    }
+
+    public function kelola_pegawai()
+    {
+        try {
+            $this->load->library(array('grocery_CRUD'));
+            $crud = new Grocery_CRUD();
+
+            $crud->set_table('pegawai');
+            $crud->set_subject('Pegawai');
+            $crud->order_by('nama_lengkap', 'ASC');
+
+            $crud->required_fields('jabatan', 'status_pegawai', 'nuptk', 'nama_lengkap', 'jk');
+
+            $crud->columns('nama_lengkap', 'nuptk',  'jabatan', /* 'mengajar',*/ 'password');
+            $crud->field_type('tgl_update', 'hidden');
+            $crud->field_type('password', 'hidden');
+            $crud->field_type('token_firebase', 'hidden');
+            $crud->field_type('terakhir_login', 'hidden');
+            $crud->field_type('wali_kelas', 'hidden');
+            $crud->field_type('token_login', 'hidden');
+
+            $crud->display_as('nuptk', 'NUPTK');
+            $crud->display_as('status_pegawai', 'Status');
+            $crud->display_as('nama_lengkap', 'Nama');
+
+            $crud->callback_after_insert(function ($post_array, $primary_key) {
+
+                $this->db->where('id', $primary_key);
+                $this->db->update(
+                    'pegawai',
+                    array(
+                        'password'   => md5($post_array['nuptk']),
+                        'tgl_update' => date('Y-m-d H:i:s'),
+                    )
+                );
+            });
+
+            $crud->callback_after_update(function ($post_array, $primary_key) {
+
+                $this->db->where('id', $primary_key);
+                $this->db->update(
+                    'pegawai',
+                    array(
+                        'tgl_update' => date('Y-m-d H:i:s'),
+                    )
+                );
+            });
+
+            $crud->callback_column('jabatan', function ($value, $row) {
+
+                return $value;
+            });
+
+            $crud->callback_column('password', function ($value, $row) {
+
+                return '<a onclick="return confirm(\'anda yakin melakukan reset password untuk pegawai ini?\');" class="text-danger" href="' . site_url('admin/reset-password-pegawai/' . $row->id) . '">RESET</a>';
+            });
+
+            $crud->set_field_upload('foto', 'uploads/foto');
+
+            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
+            $this->breadcrumbs->push('Pegawai', $this->base_breadcrumbs . '/kelola-pegawai');
+
+            $state = $crud->getState();
+            if ($state === 'insert_validation') {
+                $crud->set_rules('nuptk', 'NUPTK', 'is_unique[pegawai.nuptk]|required');
+                $crud->set_rules('email', 'Email', 'is_unique[pegawai.email]|valid_email');
+            } elseif ($state === 'update_validation') {
+                $crud->set_rules('email', 'Email', 'valid_email');
+            } elseif ($state === 'add') {
+                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-pegawai/add');
+            } elseif ($state === 'edit') {
+                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-pegawai/edit');
+            }
+
+            $extra               = array('page_title' => 'Kelola Pegawai');
+
+            $crud->unset_clone();
+            $crud->unset_read();
+
+            $output = $crud->render();
+
+            $output = array_merge((array) $output, $extra);
+
+            $this->_page_output($output);
+        } catch (Exception $e) {
+            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
+        }
     }
 
     public function kelola_siswa()
@@ -190,235 +705,6 @@ class Admin extends MX_Controller
 
             $crud->unset_read();
             $crud->unset_clone();
-
-            $output = $crud->render();
-
-            $output = array_merge((array) $output, $extra);
-
-            $this->_page_output($output);
-        } catch (Exception $e) {
-            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
-        }
-    }
-
-    public function reset_password_siswa($siswa_id)
-    {
-
-        $cek = $this->db->get_where('siswa', array('id' => $siswa_id))->row_array();
-
-        $nisn_pass = md5($cek['nisn']);
-
-        $this->db->set('password', "'" . $nisn_pass . "'", false);
-        $this->db->where('id', $siswa_id);
-        $this->db->update('siswa');
-
-        $this->alert->set('alert-success', 'Password berhasil direset dan diganti menjadi NISN');
-
-        redirect(site_url('admin/kelola-siswa'), 'reload');
-    }
-
-    public function kelola_kelas()
-    {
-        try {
-            $this->load->library(array('grocery_CRUD'));
-            $crud = new Grocery_CRUD();
-
-            $crud->set_table('kelas');
-            $crud->set_subject('Kelas');
-            $crud->order_by('nama_kelas', 'ASC');
-
-            $crud->required_fields('jurusan_id', 'nama_kelas');
-
-            $crud->columns('nama_kelas', 'siswa');
-            $crud->field_type('tgl_update', 'hidden');
-
-            $crud->set_relation('jurusan_id', 'jurusan', 'nama');
-
-            $crud->display_as('jurusan_id', 'Jurusan');
-
-            $crud->callback_after_insert(function ($post_array, $primary_key) {
-            });
-
-            $crud->callback_after_update(function ($post_array, $primary_key) {
-            });
-
-            $crud->callback_column('siswa', function ($value, $row) {
-
-                return '<a href="' . site_url('admin/kelola-siswa-kelas/' . $row->id) . '">Kelola</a>';
-            });
-
-            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
-            $this->breadcrumbs->push('Kelas', $this->base_breadcrumbs . '/kelola-kelas');
-
-            $state = $crud->getState();
-            if ($state === 'insert_validation') {
-            } elseif ($state === 'update_validation') {
-            } elseif ($state === 'add') {
-                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-kelas/add');
-            } elseif ($state === 'edit') {
-                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-kelas/add');
-            }
-
-            $crud->unset_clone();
-            $crud->unset_read();
-
-            $extra  = array('page_title' => 'Kelola Kelas');
-            $output = $crud->render();
-
-            $output = array_merge((array) $output, $extra);
-
-            $this->_page_output($output);
-        } catch (Exception $e) {
-            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
-        }
-    }
-
-    public function kelola_siswa_kelas($kelas_id = null)
-    {
-
-        if (!empty($_POST)) {
-            $kelas_id = $this->input->post('kelas_id');
-            $siswa    = $this->input->post('siswa');
-
-            foreach ($siswa as $value) {
-                $this->db->where('id', $value);
-                $this->db->update('siswa', array('kelas_id' => $kelas_id));
-            }
-        }
-
-        $data = array();
-        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
-        $this->breadcrumbs->push('Kelas', $this->base_breadcrumbs . '/kelola-kelas');
-
-        $this->breadcrumbs->push('Data Siswa Kelas', $this->base_breadcrumbs . '/kelola-siswa-kelas/' . $kelas_id);
-
-        $data['kelas_id'] = $kelas_id;
-
-        $cek = $this->db->get_where('kelas', array('id' => $kelas_id));
-
-        if ($cek->num_rows() > 0) {
-            $db_kelas           = $cek->row_array();
-            $data['page_title'] = 'Siswa Kelas ' . $db_kelas['nama_kelas'];
-        } else {
-            redirect(site_url('admin'), 'reload');
-        }
-
-        $this->db->order_by('nama_lengkap', 'ASC');
-        $data['list_siswa'] = $this->db->get_where('siswa', array('kelas_id' => $kelas_id));
-        $data['page_name']  = 'list_siswa';
-
-        $this->_page_output($data);
-    }
-
-    public function kelola_matapelajaran()
-    {
-        try {
-            $this->load->library(array('grocery_CRUD'));
-            $crud = new Grocery_CRUD();
-
-            $crud->set_table('matapelajaran');
-            $crud->set_subject('Mata Pelajaran');
-
-            $crud->required_fields('nama');
-
-            $crud->columns('nama');
-
-            $crud->callback_after_insert(function ($post_array, $primary_key) {
-            });
-
-            $crud->callback_after_update(function ($post_array, $primary_key) {
-            });
-
-            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
-            $this->breadcrumbs->push('Mata Pelajaran', $this->base_breadcrumbs . '/kelola-matapelajaran');
-
-            $state = $crud->getState();
-            if ($state === 'insert_validation') {
-            } elseif ($state === 'update_validation') {
-            } elseif ($state === 'add') {
-                $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
-            } elseif ($state === 'edit') {
-
-                $this->breadcrumbs->push('Ubah', $this->base_breadcrumbs . '/kelola-matapelajaran/add');
-            }
-
-            $crud->unset_clone();
-            $crud->unset_read();
-
-            $extra  = array('page_title' => 'Kelola Mata Pelajaran');
-            $output = $crud->render();
-
-            $output = array_merge((array) $output, $extra);
-
-            $this->_page_output($output);
-        } catch (Exception $e) {
-            show_error($e->getMessage() . ' --- ' . $e->getTraceAsString());
-        }
-    }
-
-    public function profile()
-    {
-        try {
-            $this->load->library(array('grocery_CRUD'));
-            $crud = new Grocery_CRUD();
-
-            $crud->set_table('user');
-            $crud->set_subject('Profile');
-
-            $crud->required_fields('nama_lengkap');
-            $crud->columns('username', 'nama_lengkap', 'email', 'telp');
-            $crud->field_type('tgl_update', 'hidden');
-            $crud->field_type('password', 'hidden');
-            $crud->field_type('terakhir_login', 'readonly');
-            $crud->field_type('username', 'readonly');
-            $crud->field_type('level', 'readonly');
-
-            $crud->field_type('token_firebase', 'hidden');
-
-            $crud->field_type('token_login', 'hidden');
-
-            $crud->set_field_upload('foto', 'uploads/foto');
-
-            // $crud->display_as('provinsi_id', 'Wilayah Kerja');
-
-            $crud->callback_after_insert(function ($post_array, $primary_key) {
-            });
-
-            $crud->callback_after_update(function ($post_array, $primary_key) {
-
-                $this->db->where('id', $primary_key);
-                $this->db->update(
-                    'user',
-                    array(
-                        'tgl_update' => date('Y-m-d H:i:s'),
-                    )
-                );
-            });
-
-            $this->breadcrumbs->push('Beranda', $this->base_breadcrumbs);
-            // $this->breadcrumbs->push('Profil', $this->base_breadcrumbs . '/profile');
-
-            $state = $crud->getState();
-            if ($state === 'insert_validation') {
-                // $crud->set_rules('npsn', 'NPSN', 'is_unique[sekolah.npsn]|required');
-                // $crud->set_rules('email', 'Email', 'is_unique[sekolah.email]|valid_email');
-            } elseif ($state === 'update_validation') {
-                $crud->set_rules('email', 'Email', 'valid_email');
-            } elseif ($state === 'add') {
-                // $this->breadcrumbs->push('Tambah', $this->base_breadcrumbs . '/kelola-sekolah/add');
-            } elseif ($state === 'edit') {
-
-                $curr_user_id = $this->uri->segment(4);
-
-                if ($curr_user_id != $this->user_id) {
-                    redirect(site_url('admin/profile/edit/' . $this->user_id), 'reload');
-                }
-
-                $this->breadcrumbs->push('Ubah Profil', $this->base_breadcrumbs . '/profile/edit');
-            }
-
-            $crud->unset_back_to_list();
-            $extra = array('page_title' => 'Edit Profile');
 
             $output = $crud->render();
 
