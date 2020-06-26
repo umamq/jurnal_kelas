@@ -49,6 +49,33 @@ class Kurikulum extends MX_Controller
         $this->_page_output($data);
     }
 
+    public function rekap_jurnal_kelas()
+    {
+
+        if (!empty($_POST)) {
+            $tgl_awal  = $this->input->post('tgl_awal');
+            $tgl_akhir = $this->input->post('tgl_akhir');
+            $kelas_id  = $this->input->post('kelas_id');
+        }
+
+        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+        $this->breadcrumbs->push('Rekapitulasi Jurnal Kelas', $this->base_breadcrumbs . '/rekap-jurnal-kelas');
+
+        $data['kelas']      = $this->db->get('kelas');
+        $data['page_name']  = 'rekap_jurnal_kelas';
+        $data['page_title'] = 'Rekapitulasi Jurnal Kelas';
+        $this->_page_output($data);
+    }
+
+    public function rekap_kehadiran_guru()
+    {
+        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+
+        $data['page_name']  = 'beranda';
+        $data['page_title'] = 'Beranda';
+        $this->_page_output($data);
+    }
+
     public function profile()
     {
 

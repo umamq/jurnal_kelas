@@ -213,13 +213,13 @@
                   </li>
                   <li class="nav-header">REKAPITULASI</li>
                   <li class="nav-item">
-                     <a href="<?php echo site_url('kurikulum/index') ?>" class="nav-link">
+                     <a href="<?php echo site_url('kurikulum/rekap-jurnal-kelas') ?>" class="nav-link">
                         <i class="nav-icon fas fa-book"></i>
                         <p>Jurnal Kelas</p>
                      </a>
                   </li>
                   <li class="nav-item">
-                     <a href="<?php echo site_url('kurikulum/index') ?>" class="nav-link">
+                     <a href="<?php echo site_url('kurikulum/rekap-kehadiran-guru') ?>" class="nav-link">
                         <i class="nav-icon fas fa-book"></i>
                         <p>Kehadiran Guru</p>
                      </a>
