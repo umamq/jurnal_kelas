@@ -69,10 +69,18 @@ class Kurikulum extends MX_Controller
 
     public function rekap_kehadiran_guru()
     {
-        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+        $data = array();
 
-        $data['page_name']  = 'beranda';
-        $data['page_title'] = 'Beranda';
+        if (!empty($_POST)) {
+            $tgl_awal  = $this->input->post('tgl_awal');
+            $tgl_akhir = $this->input->post('tgl_akhir');
+        }
+
+        $this->breadcrumbs->push('Dashboard', $this->base_breadcrumbs);
+        $this->breadcrumbs->push('Rekapitulasi Kehadiran Guru', $this->base_breadcrumbs . '/rekap-kehadiran-guru');
+
+        $data['page_name']  = 'rekap_kehadiran_guru';
+        $data['page_title'] = 'Rekapitulasi Kehadiran Guru';
         $this->_page_output($data);
     }
 
